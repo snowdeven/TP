@@ -2,101 +2,174 @@ import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import os
+import pandas as pd
 
-M=np.array([[737,	1066,	934,	1045,	1123,	777,	822,	843,	880,	790],
-[660,	933,	800,	987,	935,	794,	878,	830,	972,	937],
-[685,	1013,	994,	964,	970,	758,	906,	754,	910,	695],
-[709,	935,	897,	971,	886,	826,	794,	776,	941,	876],
-[733,	992,	962,	925,	972,	809,	794,	811,	910,	696],
-[690,	963,	858,	910,	862,	789,	850,	764,	1004,	744],
-[593,	935,	851,	870,	871,	814,	822,	865,	880,	913],
-[715,	876,	862,	920,	957,	787,	794,	809,	941,	752],
-[759,	938,	909,	958,	886,	727,	850,	740,	880,	675],
-[765,	931,	927,	921,	908,	753,	850,	679,	790,	711],
-[755,	852,	897,	905,	900,	765,	794,	782,	849,	714],
-[745,	899,	898,	856,	878,	784,	822,	834,	849,	612],
-[664,	852,	851,	856,	797,	865,	767,	808,	941,	730],
-[629,	841,	901,	882,	930,	757,	822,	720,	849,	795],
-[689,	791,	777,	870,	903,	725,	822,	795,	1067,	598],
-[651,	847,	842,	930,	852,	789,	767,	775,	790,	761],
-[589,	821,	866,	913,	821,	767,	714,	868,	790,	794],
-[604,	956,	847,	901,	905,	736,	822,	663,	790,	656],
-[633,	892,	772,	794,	821,	727,	767,	836,	849,	772]]
-)
-
-n , m =np.shape(M)
+import seaborn as sns
 
 
 
-M_av=[]
 
 
+#define the path of the csv file of JODecathlon
+path=os.path.join(os.path.dirname(__file__)
+                , 'resultJODecathlon.csv') 
 
+
+x=pd.read_csv(path,sep=";",header=0) #read the csv file from mpl_toolkits.mplot3d.proj3d import proj_transform
+from mpl_toolkits.mplot3d.axes3d import Axes3D
+Sport_labels=list(x.head(0))[2:-1]   #keep the sport labels with removing other name of column not usefull
+Names=list(x['Athlete'])             #keep the name of our athlete
+M=x.to_numpy()                       #transforme dataframe into an array
+M=M[:,2:]                            #remove the 2 first column
+M=M[:,:-1]                           #remove the last column
+
+n , m =np.shape(M) #get the shape of our matrix
+
+M_av=[]            #define a empty list for our average
 for i in range(m):
-
     M_av.append(np.mean(M[:,i]))
 
-M_c=np.zeros((n,m))
-
+M_cov=np.zeros((n,m))           #define a array of zero 
 for i in range(m):
-    M_c[:,i]=M[:,i]-M_av[i]
+    M_cov[:,i]=M[:,i]-M_av[i]   #centered reduced matrix
+C=np.cov(M_cov,rowvar=False)    #take the covariance matrix of our centered reduced matrix 
+                                #to get the covariance matrix 
+
+R=np.corrcoef(C, rowvar=False)  #Compute the correlation coefficients 
+                                # to get correlation coefficient matrix
+
+V=LA.eigh(C)[1]   #Compute the eigenvector from the covariance matrix
+                    #to get eigen vectors matrix 
+
+Y=np.dot(M_cov,V)   #Compute the matrix product between covariance matrix and eigen vectors matrix
+                        # to get the Karhunen-Loève transformed matrix of data
+
+Z=Y[:,-3:]          #remove the two first column of Y matrix to get Z matrix
+
+PHI = V.transpose() #Compute the transpose of eigen vectors matrix 
+                        #to get the NxN rotation matrix
+
+PSI=PHI[-3:,:]      #remove the two first line from the NxN rotation matrix
+                    #to get the Phi matrix
+
+M_trunc= M_av + np.dot(Z,PSI)   #compute the sum of average matrix and the tensor product bewteen
+                                #Z and Psi matrix to get truncated matrix
+
+##############################################################################
+#                                                                            #
+#                          ###################                               #
+#                          #   QUESTION 1    #                               #
+#                          #_________________#                               #
+#                                                                            #
+##############################################################################
+
+Mcompar = (M - M_trunc)/M  #compare the trucated matrix with the original matrix
 
 
-C=np.cov(M_c,rowvar=False)
+##############################################################################
+#                                                                            #
+#                          ###################                               #
+#                          #   QUESTION 2    #                               #
+#                          #_________________#                               #
+#                                                                            #
+##############################################################################
 
+loss = sum(LA.eigh(C)[0][:-3])/sum(LA.eigh(C)[0]) #comppute the information lost in our computation
 
+print("the coefficient of information loss is Q = ",round(loss,3),"%")
 
+##############################################################################
+#                                                                            #
+#                          ###################                               #
+#                          #   QUESTION 3    #                               #
+#                          #_________________#                               #
+#                                                                            #
+##############################################################################
+"""plot a color graph and a 3D graph for the R matrix
+with plt.color and ax.bar3D (and a mesh grid )
+to see the correlation between the coefficients
+"""
+fig, ax = plt.subplots()
+plt.rcParams.update({'font.size': 7})
+plt.pcolor(R,)
+plt.colorbar()
 
-M_r=np.zeros((m,m))
-
-for i in range(m):
-    for j in range(m):
-        M_r[i,j]=C[i,j]/(np.sqrt(C[i,i]*C[j,j]))
-
-M_v=LA.eigh(C)[1]
-
-
-
-M_y=np.dot(M_c,M_v)
-
-
-
-
-
-
-M_z=M_y[:,-3:]
-
-
-
-
-
-M_Psi = M_v.transpose()
-M_Psi=M_Psi[-3:,:]
-
-
-
-
-
-M_trunc= M_av + np.dot(M_z,M_Psi)
-
-
-
-
-print(abs(M-M_trunc)/M_trunc *100)
+plt.title("2D colorgraph of  the  correlation  coefficients  matrix  R")
+ax.set_yticks(np.arange(len(Sport_labels)), labels=Sport_labels)
+ax.set_xticks(np.arange(len(Sport_labels)), labels=Sport_labels)
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+        rotation_mode="anchor")
+plt.show()
 
 
 
 fig = plt.figure()
-ax = plt.axes(projection='3d')
+ax1 = fig.add_subplot(111, projection='3d')
 
+X = Y = np.arange(1,11)
+x, y = np.meshgrid(X,Y)
+x, y = x.ravel(), y.ravel()
 
+top = R.ravel()
+bottom = np.zeros_like(top)
+width = depth = 1 * top
 
-ax = plt.axes(projection='3d')
+color = ['r' if height > 0 else 'b' for height in top ]
+ax1.bar3d(x, y, bottom, width, depth, top, shade = True,color=color)
+ax1.plot([0, 0], [0, 0], [-1, 1], color='white')
+ax1.set_yticks(np.arange(len(Sport_labels)), labels=Sport_labels)
+ax1.set_xticks(np.arange(len(Sport_labels)), labels=Sport_labels)
+plt.setp(ax1.get_xticklabels(), rotation=45, ha="right",
+        rotation_mode="anchor")
 
-# Data for a three-dimensional line
-zdata = M_z[:,2]
-xdata = M_z[:,0]
-ydata = M_z[:,1]
-ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens');
+plt.title("3D graph of  the  correlation  coefficients  matrix  R")
+plt.show()
 
+##############################################################################
+#                                                                            #
+#                          ###################                               #
+#                          #   QUESTION 4    #                               #
+#                          #_________________#                               #
+#                                                                            #
+##############################################################################
+"""plot a 3D graph of last 3 column of Y
+"""
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+for i in range(19):
+    ax.quiver(0, 0, 0, Z[i,0], Z[i,1], Z[i,2],alpha=0.6)
+    ax.text3D(Z[i,0], Z[i,1], Z[i,2],Names[i],)
+ax.set_xlim([-200, 200])
+ax.set_ylim([-200, 200])
+ax.set_zlim([-200, 200])
+ax.set_xlabel("component 1")
+ax.set_ylabel("component 2")
+ax.set_zlabel("component 3")
+plt.title("3D graph of the athletes")
+plt.show()
+
+##############################################################################
+#                                                                            #
+#                          ###################                               #
+#                          #   QUESTION 5    #                               #
+#                          #_________________#                               #
+#                                                                            #
+##############################################################################
+"""plot a 3D graph of last 3 rows of PSI
+"""
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+for i in range(10):
+    ax.quiver(0, 0, 0,PSI[0,i],PSI[1,i],PSI[2,i],alpha=0.6)
+    ax.text3D(PSI[0,i],PSI[1,i],PSI[2,i],Sport_labels[i],)
+
+ax.set_xlabel("component 1")
+ax.set_ylabel("component 2")
+ax.set_zlabel("component 3")
+ax.set_xlim([-0.70, 0.70])
+ax.set_ylim([-0.70, 0.70])
+ax.set_zlim([-0.70, 0.70])
+plt.title("3D graph of the events")
 plt.show()
