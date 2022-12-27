@@ -7,18 +7,44 @@ from scipy import linalg as LA2
 import matplotlib.pyplot as py
 import mpl_toolkits.mplot3d as mp3d
 
+# Toggle the potential 
+# 1: wave packet in a box
+# 2: in front of a potential barrier
+# 3: Quantum Fermi accelerator
+POT=3
 
-X_MAX=10
-M=1
-N_STEP=100
+# Space discretization
+X_MAX=20
+N_STEP=250
 DELTA_X=X_MAX/N_STEP
+
+# Space axis
 XD=[i*DELTA_X for i in range(N_STEP)]
-T_MAX=16
-N_TIME=300
+
+# Particle mass
+M=1
+
+# Time discretization
+T_MAX=30
+N_TIME=250
 DELTA_T=T_MAX/N_TIME
-SIGMA_X=0.5
+
+# Time axis
 XT=[i*DELTA_T for i in range(N_TIME)]
 
-Psi=np.zeros((N_STEP,N_TIME),dtype="complex")
+# Initial momentum
+K0=10*np.sqrt(6)
+
+# STD of gaussian packet
+SIGMA_X=0.5
+
+# Potential period
+TAU=15
+
+# Wave packet period
+P=2
+
+
+
 
 
