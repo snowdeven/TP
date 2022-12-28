@@ -4,7 +4,7 @@
 import numpy as np
 from numpy import linalg as LA
 from scipy import linalg as LA2
-import matplotlib.pyplot as py
+import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d as mp3d
 
 # Toggle the potential 
@@ -45,6 +45,7 @@ TAU=15
 P=2
 
 
+x = np.linspace(0,20,10000)
 
-
-
+plt.plot(x,np.sin(10*x*np.pi/20)**2)
+plt.show()
