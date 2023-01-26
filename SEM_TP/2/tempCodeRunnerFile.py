@@ -1,0 +1,1 @@
+fit_coef, pcov = curve_fit(GAUSS, T_DATA, Y_DATA) # use of curve.fit
